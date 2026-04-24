@@ -4,7 +4,7 @@ on:
   schedule:
     # Запуск каждые 12 часов (в 00:00 и 12:00)
     - cron: '0 0,12 * * *'
-  workflow_dispatch: # Кнопка для ручного запуска, чтобы тестировать
+  workflow_dispatch: # Кнопка для ручного запуска
 
 # Даем боту права на запись в твой репозиторий
 permissions:
@@ -30,7 +30,6 @@ jobs:
 
       - name: Run Parser
         env:
-          # Токен нужен для жесткого поиска по чужим репам на самом GitHub
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python parser.py
 
@@ -40,5 +39,5 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add proxies.txt
           git commit -m "Auto-update proxy database" || echo "No changes to commit"
-          git push
+          git push || echo "Nothing to push"
 
