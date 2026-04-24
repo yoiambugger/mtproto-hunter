@@ -1,43 +1,41 @@
-name: MTProto Hunter Bot
+name: Update Verified Proxy Lists
 
 on:
   schedule:
-    # Запуск каждые 12 часов (в 00:00 и 12:00)
-    - cron: '0 0,12 * * *'
-  workflow_dispatch: # Кнопка для ручного запуска
+    - cron: '0 * * * *'  # каждый час
+  workflow_dispatch:
 
-# Даем боту права на запись в твой репозиторий
 permissions:
   contents: write
 
 jobs:
-  hunt-proxies:
+  collect:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+    # Устанавливаем зависимости прямо здесь
+    - run: pip install requests telethon
 
-      - name: Run Parser
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python parser.py
+    # Запускаем НАШ скрипт и берем топ-200 самых быстрых
+    - run: python parser.py --top 200
 
-      - name: Commit and Push changes
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add proxies.txt
-          git commit -m "Auto-update proxy database" || echo "No changes to commit"
-          git push || echo "Nothing to push"
+    # Копируем свежие файлы в корень репозитория для удобных ссылок
+    - run: |
+        cp verified/proxy_ru_verified.txt  proxy_ru.txt
+        cp verified/proxy_eu_verified.txt  proxy_eu.txt
+        cp verified/proxy_all_verified.txt proxy_all.txt
+
+    # Коммитим и пушим (только если есть изменения)
+    - run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add verified/ proxy_ru.txt proxy_eu.txt proxy_all.txt || true
+        git diff --staged --quiet || git commit -m "🔥 Verified proxies $(date)"
+        git push || true
 
